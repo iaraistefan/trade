@@ -1,22 +1,34 @@
-from flask import Flask, request
+# app.py
+from flask import Flask, request, jsonify
 import requests
+import os
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
-# Configurare bot Telegram
-TOKEN = "8164160967:AAGt8kUeFe1--8al4Nw8LbsiXLzBCWhjHrE"
-CHAT_ID = "-1002671409467"
-TELEGRAM_URL = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+TOKEN = os.getenv('TELEGRAM_TOKEN')
+CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-@app.route("/webhook", methods=["POST"])
+@app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.json
-    message = data.get("text", "⚠️ Nu am primit niciun mesaj.")
-    
-    # Trimitem mesajul către Telegram
-    requests.post(TELEGRAM_URL, json={"chat_id": CHAT_ID, "text": message})
-    
-    return {"status": "ok"}
+    try:
+        data = request.json
+        alert_msg = data.get('message', '⚠️ Alertă fără mesaj')
+        
+        requests.post(
+            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+            json={
+                "chat_id": CHAT_ID,
+                "text": alert_msg,
+                "parse_mode": "HTML"
+            }
+        )
+        return jsonify({"status": "success"}), 200
+        
+    except Exception as e:
+        logging.error(f"Eroare: {str(e)}")
+        return jsonify({"status": "error"}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
