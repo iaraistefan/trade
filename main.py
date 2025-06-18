@@ -1,31 +1,31 @@
 import os
+import json
 from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
 
-# Tokenul și Chat ID-ul le poți seta ca variabile de mediu în Render
+# Variabile de mediu pentru token și chat ID
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# Funcție care trimite mesajul către Telegram
+# Funcție pentru trimiterea mesajului către Telegram
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": text,
-        "parse_mode": None  # ← poți pune "HTML" sau "MarkdownV2" dacă vrei formatare
-    }
+    payload = {"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"}
     response = requests.post(url, json=payload)
     print(f"[Telegram] Status: {response.status_code} | Răspuns: {response.text}")
 
-# Ruta webhook unde TradingView trimite date
+# Webhook care primește alerta din TradingView
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
-        data = request.get_json(force=True)  # ← forțăm Flask să încerce și dacă nu e "application/json"
-        print(f"[Webhook] Mesaj primit: {data}")
-        message = data.get("message", "⚠️ Nu a fost găsit câmpul 'message'")
+        raw_data = request.get_data().decode("utf-8")  # ← Extrage conținutul brut
+        print(f"[Webhook] JSON primit: {raw_data}")
+
+        parsed_data = json.loads(raw_data)  # ← Convertim JSON-ul brut într-un dicționar
+        message = parsed_data.get("message", "⚠️ Nu a fost găsit câmpul 'message'")
+        
         send_telegram_message(message)
         return jsonify({"status": "ok", "delivered": True}), 200
     except Exception as e:
@@ -35,4 +35,4 @@ def webhook():
 # Endpoint de test GET — opțional
 @app.route("/", methods=["GET"])
 def index():
-    return "✅ Webhook este activ!"
+    return "✅ Webhook activ și gata de trimitere în Telegram!"
