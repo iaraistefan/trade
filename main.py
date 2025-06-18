@@ -5,8 +5,8 @@ import requests
 app = Flask(__name__)
 
 # Variabile de mediu pentru token și chat ID (din Render dashboard)
-BOT_TOKEN = os.getenv("8164160967:AAGt8kUeFe1--8al4Nw8LbsiXLzBCWhjHrE")
-CHAT_ID = os.getenv("-1002671409467")
+BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Funcție pentru a trimite mesajul în Telegram
 def send_telegram_message(text):
