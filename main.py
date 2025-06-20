@@ -1,5 +1,4 @@
 import os
-import json
 from flask import Flask, request, jsonify
 import requests
 
@@ -9,30 +8,28 @@ app = Flask(__name__)
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# Trimite mesajul către Telegram
+# Funcția care trimite mesajul în Telegram
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": CHAT_ID,
         "text": text,
-        "parse_mode": "HTML"  # poți pune None dacă nu vrei stilizare
+        "parse_mode": "HTML"  # Poți schimba cu None dacă nu vrei formatări
     }
     response = requests.post(url, json=payload)
     print(f"[Telegram] Trimitem: {payload}")
     print(f"[Telegram] Status: {response.status_code} | Răspuns: {response.text}")
 
-# Webhook-ul care primește alerta din TradingView
+# Webhook-ul care primește alertă simplă (fără JSON)
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
-        raw = request.get_data().decode("utf-8")
-        print(f"[Webhook] JSON primit brut:\n{raw}")
+        message = request.get_data(as_text=True).strip()
+        print(f"[Webhook] Mesaj primit:\n{message}")
 
-        # Înlocuiește toate newline-urile brute cu \n escapate pentru JSON corect
-        safe_json = raw.replace("\n", "\\n")
-        data = json.loads(safe_json)
+        if not message:
+            raise ValueError("Mesajul primit este gol.")
 
-        message = data.get("message", "⚠️ Mesajul nu a fost găsit")
         send_telegram_message(message)
         return jsonify({"status": "ok", "delivered": True}), 200
     except Exception as e:
