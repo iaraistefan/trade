@@ -1,29 +1,30 @@
-import os
+
 from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
 
-# Tokenul și Chat ID-ul din variabile de mediu
-BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+# === Config: Token și Chat ID ===
+BOT_TOKEN = "8164160967:AAGt8kUeFe1--8al4Nw8LbsiXLzBCWhjHrE"
+CHAT_ID = "-1002671409467"  # Canal: stefitradesignal
 
-# Funcția care trimite mesajul în Telegram
+# === Funcție trimis mesaj Telegram ===
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": CHAT_ID,
         "text": text,
-        "parse_mode": "HTML"  # Poți schimba cu None dacă nu vrei formatări
+        "parse_mode": "HTML"  # sau "Markdown" dacă preferi
     }
     response = requests.post(url, json=payload)
-    print(f"[Telegram] Trimitem: {payload}")
+    print(f"[Telegram] Trimis: {payload}")
     print(f"[Telegram] Status: {response.status_code} | Răspuns: {response.text}")
 
-# Webhook-ul care primește alertă simplă (fără JSON)
+# === Webhook TradingView ===
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
+        # Acceptă text simplu sau JSON cu 'message'
         message = request.get_data(as_text=True).strip()
         print(f"[Webhook] Mesaj primit:\n{message}")
 
@@ -36,7 +37,10 @@ def webhook():
         print(f"[EROARE Webhook] {e}")
         return jsonify({"status": "error", "details": str(e)}), 400
 
-# Endpoint GET de test
+# === Test GET ===
 @app.route("/", methods=["GET"])
 def index():
-    return "✅ Webhook este activ!"
+    return "✅ Webhook funcționează și așteaptă alerte!"
+
+if __name__ == "__main__":
+    app.run(port=5000)
